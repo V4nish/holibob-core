@@ -31,7 +31,11 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Database\\Seeders\\": "database/seeders/",
+            "Holibob\\Affiliates\\": "packages/affiliates/src/",
+            "Holibob\\Tracking\\": "packages/tracking/src/",
+            "Holibob\\Places\\": "packages/places/src/",
+            "Holibob\\Search\\": "packages/search/src/"
         }
     },
     "autoload-dev": {
