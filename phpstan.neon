@@ -1,0 +1,22 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - packages
+
+    # Level 5 is a good starting point (0-9, where 9 is strictest)
+    level: 5
+
+    ignoreErrors:
+        # Ignore errors in generated files
+        - '#PHPDoc tag @var#'
+
+    excludePaths:
+        - vendor
+        - storage
+        - bootstrap/cache
+
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
