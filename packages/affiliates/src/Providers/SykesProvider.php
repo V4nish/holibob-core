@@ -265,10 +265,14 @@ class SykesProvider extends AbstractAffiliateProvider
     protected function mapPropertyType(string $type): string
     {
         return match (strtolower($type)) {
-            'cottage', 'house' => 'cottage',
+            'cottage', 'house', 'bungalow' => 'cottage',
+            'hotel', 'inn', 'guest house', 'guesthouse', 'b&b', 'bed and breakfast' => 'hotel',
+            'caravan', 'mobile home', 'static caravan' => 'caravan',
+            'holiday park', 'park home', 'resort' => 'holiday-park',
+            'yurt', 'glamping', 'pod', 'safari tent', 'bell tent' => 'yurt',
             'apartment', 'flat' => 'apartment',
             'villa' => 'villa',
-            'lodge', 'cabin' => 'lodge',
+            'lodge', 'cabin', 'chalet' => 'lodge',
             default => 'cottage',
         };
     }

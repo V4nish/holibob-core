@@ -23,7 +23,7 @@ class SearchController extends Controller
             'location' => 'nullable|array',
             'location.*' => 'integer|exists:locations,id',
             'type' => 'nullable|array',
-            'type.*' => 'string|in:cottage,apartment,villa,lodge',
+            'type.*' => 'string|in:cottage,hotel,caravan,holiday-park,yurt,apartment,villa,lodge',
             'sleeps' => 'nullable|integer|min:1|max:50',
             'bedrooms' => 'nullable|integer|min:0|max:20',
             'bathrooms' => 'nullable|integer|min:0|max:10',
