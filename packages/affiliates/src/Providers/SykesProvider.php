@@ -17,17 +17,31 @@ class SykesProvider extends AbstractAffiliateProvider
     public function fetchProperties(): Collection
     {
         try {
-            // Example: Fetch from FTP CSV file or API
             $feedUrl = $this->getConfig('feed_url');
+            $feedFormat = $this->getConfig('feed_format', 'csv'); // csv or xml
 
             if (! $feedUrl) {
                 Log::warning('Sykes feed URL not configured');
                 return collect();
             }
 
-            // For now, return empty collection
-            // In real implementation, fetch and parse CSV/XML/API response
-            return collect();
+            Log::info('Fetching Sykes properties from feed', ['url' => $feedUrl]);
+
+            // Fetch the feed
+            $response = Http::timeout(120)->get($feedUrl);
+
+            if (! $response->successful()) {
+                Log::error('Failed to fetch Sykes feed', [
+                    'status' => $response->status(),
+                    'url' => $feedUrl,
+                ]);
+                return collect();
+            }
+
+            // Parse based on format
+            return $feedFormat === 'xml'
+                ? $this->parseXmlFeed($response->body())
+                : $this->parseCsvFeed($response->body());
 
         } catch (\Exception $e) {
             Log::error('Failed to fetch Sykes properties', [
@@ -39,6 +53,115 @@ class SykesProvider extends AbstractAffiliateProvider
     }
 
     /**
+     * Parse CSV feed into collection.
+     *
+     * @param string $csvContent
+     * @return Collection<int, array<string, mixed>>
+     */
+    protected function parseCsvFeed(string $csvContent): Collection
+    {
+        $lines = str_getcsv($csvContent, "\n");
+
+        if (empty($lines)) {
+            return collect();
+        }
+
+        // First line is headers
+        $headers = str_getcsv(array_shift($lines));
+        $properties = [];
+
+        foreach ($lines as $line) {
+            $data = str_getcsv($line);
+
+            if (count($data) !== count($headers)) {
+                continue; // Skip malformed rows
+            }
+
+            $property = array_combine($headers, $data);
+
+            if ($this->isValidProperty($property)) {
+                $properties[] = $property;
+            }
+        }
+
+        Log::info('Parsed CSV feed', ['count' => count($properties)]);
+
+        return collect($properties);
+    }
+
+    /**
+     * Parse XML feed into collection.
+     *
+     * @param string $xmlContent
+     * @return Collection<int, array<string, mixed>>
+     */
+    protected function parseXmlFeed(string $xmlContent): Collection
+    {
+        try {
+            $xml = simplexml_load_string($xmlContent);
+
+            if ($xml === false) {
+                Log::error('Failed to parse XML feed');
+                return collect();
+            }
+
+            $properties = [];
+
+            foreach ($xml->product as $product) {
+                $property = [
+                    'product_id' => (string) $product->pid,
+                    'product_name' => (string) $product->name,
+                    'description' => (string) $product->desc,
+                    'deep_link' => (string) $product->purl,
+                    'image_url' => (string) $product->imgurl,
+                    'price' => (string) $product->price,
+                    'currency' => (string) $product->currency,
+                    'merchant_category' => (string) $product->category,
+                    'brand_name' => (string) $product->brand,
+                ];
+
+                // Add custom fields if present
+                if (isset($product->custom)) {
+                    foreach ($product->custom as $custom) {
+                        $property[(string) $custom['name']] = (string) $custom;
+                    }
+                }
+
+                if ($this->isValidProperty($property)) {
+                    $properties[] = $property;
+                }
+            }
+
+            Log::info('Parsed XML feed', ['count' => count($properties)]);
+
+            return collect($properties);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to parse XML feed', ['error' => $e->getMessage()]);
+            return collect();
+        }
+    }
+
+    /**
+     * Check if property has required fields.
+     *
+     * @param array<string, mixed> $property
+     * @return bool
+     */
+    protected function isValidProperty(array $property): bool
+    {
+        $requiredFields = ['product_id', 'product_name'];
+
+        foreach ($requiredFields as $field) {
+            if (empty($property[$field])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Transform Sykes data to internal schema.
      *
      * @param array<string, mixed> $rawData
@@ -46,34 +169,36 @@ class SykesProvider extends AbstractAffiliateProvider
      */
     public function transform(array $rawData): array
     {
-        return [
-            'external_id' => $rawData['property_id'] ?? '',
-            'name' => $rawData['property_name'] ?? '',
-            'slug' => $this->generateSlug(
-                $rawData['property_name'] ?? '',
-                $rawData['property_id'] ?? ''
-            ),
-            'description' => $rawData['description'] ?? '',
-            'short_description' => Str::limit($rawData['description'] ?? '', 200),
-            'property_type' => $this->mapPropertyType($rawData['type'] ?? ''),
+        // Support both Awin feed format and custom format
+        $productId = $rawData['product_id'] ?? $rawData['pid'] ?? '';
+        $productName = $rawData['product_name'] ?? $rawData['name'] ?? '';
+        $description = $rawData['description'] ?? $rawData['desc'] ?? '';
 
-            // Location
+        return [
+            'external_id' => $productId,
+            'name' => $productName,
+            'slug' => $this->generateSlug($productName, $productId),
+            'description' => $description,
+            'short_description' => Str::limit($description, 200),
+            'property_type' => $this->mapPropertyType($rawData['property_type'] ?? $rawData['merchant_category'] ?? ''),
+
+            // Location - from custom fields
             'postcode' => $rawData['postcode'] ?? null,
             'address_line_1' => $rawData['address'] ?? null,
-            'latitude' => isset($rawData['lat']) ? (float) $rawData['lat'] : null,
-            'longitude' => isset($rawData['lng']) ? (float) $rawData['lng'] : null,
+            'latitude' => isset($rawData['latitude']) ? (float) $rawData['latitude'] : null,
+            'longitude' => isset($rawData['longitude']) ? (float) $rawData['longitude'] : null,
 
-            // Capacity
-            'sleeps' => isset($rawData['max_guests']) ? (int) $rawData['max_guests'] : 0,
+            // Capacity - from custom fields
+            'sleeps' => isset($rawData['sleeps']) ? (int) $rawData['sleeps'] : 0,
             'bedrooms' => isset($rawData['bedrooms']) ? (int) $rawData['bedrooms'] : 0,
             'bathrooms' => isset($rawData['bathrooms']) ? (int) $rawData['bathrooms'] : 0,
 
             // Pricing
-            'price_from' => isset($rawData['weekly_price']) ? (float) $rawData['weekly_price'] : null,
-            'price_currency' => 'GBP',
+            'price_from' => isset($rawData['price']) ? (float) $rawData['price'] : null,
+            'price_currency' => $rawData['currency'] ?? 'GBP',
 
-            // Affiliate
-            'affiliate_url' => $this->generateAffiliateUrl($rawData['property_id'] ?? ''),
+            // Affiliate - use deep_link from Awin or generate custom
+            'affiliate_url' => $rawData['deep_link'] ?? $this->generateAffiliateUrl($productId),
             'commission_rate' => $this->getConfig('commission_rate'),
 
             // Status
@@ -158,17 +283,39 @@ class SykesProvider extends AbstractAffiliateProvider
     {
         $images = [];
 
-        // Example: Parse comma-separated image URLs
+        // Handle Awin feed primary image
+        if (isset($rawData['image_url']) && ! empty($rawData['image_url'])) {
+            $images[] = [
+                'url' => trim($rawData['image_url']),
+                'display_order' => 0,
+                'is_primary' => true,
+            ];
+        }
+
+        // Handle additional images (comma or pipe separated)
         if (isset($rawData['images']) && is_string($rawData['images'])) {
-            $imageUrls = explode(',', $rawData['images']);
+            $separator = str_contains($rawData['images'], '|') ? '|' : ',';
+            $imageUrls = explode($separator, $rawData['images']);
 
             foreach ($imageUrls as $index => $url) {
-                $images[] = [
-                    'url' => trim($url),
-                    'display_order' => $index,
-                    'is_primary' => $index === 0,
-                ];
+                $url = trim($url);
+                if (! empty($url)) {
+                    $images[] = [
+                        'url' => $url,
+                        'display_order' => $index + 1,
+                        'is_primary' => false,
+                    ];
+                }
             }
+        }
+
+        // Handle alternate_image field from Awin
+        if (isset($rawData['alternate_image']) && ! empty($rawData['alternate_image'])) {
+            $images[] = [
+                'url' => trim($rawData['alternate_image']),
+                'display_order' => count($images),
+                'is_primary' => false,
+            ];
         }
 
         return $images;

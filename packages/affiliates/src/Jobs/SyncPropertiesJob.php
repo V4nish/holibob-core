@@ -11,6 +11,7 @@ use App\Models\SyncLog;
 use Holibob\Affiliates\Contracts\AffiliateProviderInterface;
 use Holibob\Affiliates\Events\PropertySynced;
 use Holibob\Affiliates\Events\SyncFailed;
+use Holibob\Affiliates\Services\LocationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -177,16 +178,12 @@ class SyncPropertiesJob implements ShouldQueue
      */
     protected function findOrCreateLocation(array $data): Location
     {
-        // For now, create a simple location
-        // In production, implement proper postcode lookup service
-        return Location::firstOrCreate(
-            ['slug' => 'uk'],
-            [
-                'name' => 'United Kingdom',
-                'type' => 'country',
-                'latitude' => 54.7023545,
-                'longitude' => -3.2765753,
-            ]
+        $locationService = new LocationService();
+
+        return $locationService->findOrCreateByPostcode(
+            $data['postcode'] ?? null,
+            $data['latitude'] ?? null,
+            $data['longitude'] ?? null
         );
     }
 

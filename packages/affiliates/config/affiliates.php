@@ -19,6 +19,7 @@ return [
             'config' => [
                 'affiliate_id' => env('SYKES_AFFILIATE_ID'),
                 'feed_url' => env('SYKES_FEED_URL'),
+                'feed_format' => env('SYKES_FEED_FORMAT', 'csv'), // csv or xml
                 'affiliate_base_url' => env('SYKES_BASE_URL', 'https://www.sykescottages.co.uk'),
                 'commission_rate' => env('SYKES_COMMISSION_RATE', 5.0),
             ],
