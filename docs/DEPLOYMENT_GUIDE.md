@@ -93,8 +93,9 @@ npm --version
 ### 2.1 Clone the Repository
 
 ```bash
-# Create app directory
-mkdir -p /var/www
+# Create app directory with proper permissions
+sudo mkdir -p /var/www
+sudo chown -R $USER:$USER /var/www
 cd /var/www
 
 # Clone repository
