@@ -68,19 +68,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
-COPY . .
-
-# Install dependencies (production only)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Set permissions
-RUN chown -R www-data:www-data \
-    /var/www/html/storage \
-    /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage \
-    && chmod -R 775 /var/www/html/bootstrap/cache
-
 # Configure PHP for production
 RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/custom.ini \
     && echo "upload_max_filesize=20M" >> /usr/local/etc/php/conf.d/custom.ini \
@@ -90,10 +77,5 @@ RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/custom.ini \
     && echo "opcache.interned_strings_buffer=16" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/custom.ini
-
-# Clear caches
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
 
 CMD ["php-fpm"]
