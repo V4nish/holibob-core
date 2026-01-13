@@ -21,7 +21,7 @@ return new class extends Migration
             // Who clicked
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->string('session_id');
-            $table->inet('ip_address')->nullable();
+            $table->string('ip_address', 45)->nullable(); // Supports IPv4 and IPv6
             $table->text('user_agent')->nullable();
 
             // Search context (what led to this click)
