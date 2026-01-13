@@ -14,7 +14,7 @@ RUN apk add --no-cache \
     npm
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql zip bcmath opcache
+RUN docker-php-ext-install pdo pdo_pgsql zip bcmath opcache dom
 
 # Install Redis extension
 RUN apk add --no-cache pcre-dev $PHPIZE_DEPS \
@@ -54,7 +54,7 @@ RUN apk add --no-cache \
     supervisor
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql zip bcmath opcache
+RUN docker-php-ext-install pdo pdo_pgsql zip bcmath opcache dom
 
 # Install Redis extension
 RUN apk add --no-cache pcre-dev $PHPIZE_DEPS \
