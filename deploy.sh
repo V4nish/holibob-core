@@ -33,9 +33,13 @@ docker-compose -f docker-compose.prod.yml down
 echo "🐳 Building and starting Docker containers..."
 docker-compose -f docker-compose.prod.yml up -d --build
 
-# Wait for database to be ready
-echo "⏳ Waiting for database..."
+# Wait for containers to be ready
+echo "⏳ Waiting for containers..."
 sleep 10
+
+# Install PHP dependencies
+echo "📦 Installing PHP dependencies..."
+docker-compose -f docker-compose.prod.yml exec -T php composer install --no-dev --optimize-autoloader --no-interaction
 
 # Run migrations
 echo "🗄️  Running database migrations..."

@@ -196,20 +196,7 @@ MEILISEARCH_KEY=your_secure_meilisearch_master_key_min_32_chars
 openssl rand -base64 32
 ```
 
-### 2.3 Install PHP Dependencies
-
-```bash
-# Install Composer globally (if not already installed)
-curl -sS https://getcomposer.org/installer | php
-sudo mv composer.phar /usr/local/bin/composer
-
-# Install PHP dependencies for production
-composer install --no-dev --optimize-autoloader --no-interaction
-```
-
-This installs Laravel and all required PHP packages.
-
-### 2.4 Build Frontend Assets
+### 2.3 Build Frontend Assets
 
 ```bash
 # Install Node dependencies
@@ -224,7 +211,7 @@ This will take a few minutes. You should see output ending with:
 ✓ built in X.XXs
 ```
 
-### 2.5 Start Docker Containers
+### 2.4 Start Docker Containers
 
 ```bash
 # Build and start all containers
@@ -237,6 +224,15 @@ This will:
 - Start queue worker and scheduler
 
 **First Build**: Takes 5-10 minutes. Subsequent builds are much faster.
+
+### 2.5 Install PHP Dependencies
+
+```bash
+# Install PHP dependencies inside the PHP container
+docker-compose -f docker-compose.prod.yml exec php composer install --no-dev --optimize-autoloader --no-interaction
+```
+
+This installs Laravel and all required PHP packages inside the container.
 
 ### 2.6 Generate Application Key
 
