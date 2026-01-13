@@ -5,6 +5,7 @@ FROM php:8.3-fpm-alpine AS development
 RUN apk add --no-cache \
     postgresql-dev \
     libzip-dev \
+    libxml2-dev \
     zip \
     unzip \
     git \
@@ -51,6 +52,7 @@ FROM php:8.3-fpm-alpine AS production
 RUN apk add --no-cache \
     postgresql-dev \
     libzip-dev \
+    libxml2-dev \
     supervisor
 
 # Install PHP extensions
