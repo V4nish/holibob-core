@@ -92,15 +92,73 @@ npm --version
 
 ### 2.1 Clone the Repository
 
+**Important**: If your repository is private, you'll need to authenticate. GitHub no longer supports password authentication - you must use either:
+1. **Personal Access Token (PAT)** - Recommended for private repos
+2. **SSH Key** - Alternative method
+3. **Make repo public temporarily** - Easiest for initial deployment
+
+#### Option A: Using Personal Access Token (for private repos)
+
 ```bash
 # Create app directory with proper permissions
 sudo mkdir -p /var/www
 sudo chown -R $USER:$USER /var/www
 cd /var/www
 
-# Clone repository
+# Clone with token in URL (replace YOUR_TOKEN)
+git clone https://YOUR_TOKEN@github.com/V4nish/holibob-core.git holibob
+cd holibob
+
+# Remove token from git config for security
+git remote set-url origin https://github.com/V4nish/holibob-core.git
+```
+
+**To create a GitHub Personal Access Token:**
+1. Go to https://github.com/settings/tokens
+2. Click "Generate new token" → "Generate new token (classic)"
+3. Name it "Holibob Deployment"
+4. Select scopes: `repo` (full control)
+5. Click "Generate token" and copy it immediately
+
+#### Option B: Using SSH Key (for private repos)
+
+```bash
+# Generate SSH key on server
+ssh-keygen -t ed25519 -C "your_email@example.com"
+# Press Enter for all prompts (use defaults)
+
+# Display public key
+cat ~/.ssh/id_ed25519.pub
+# Copy the output
+
+# Add to GitHub:
+# Go to https://github.com/settings/keys
+# Click "New SSH key", paste the key, save
+
+# Clone with SSH
+sudo mkdir -p /var/www
+sudo chown -R $USER:$USER /var/www
+cd /var/www
+git clone git@github.com:V4nish/holibob-core.git holibob
+cd holibob
+```
+
+#### Option C: Public Repository (easiest)
+
+```bash
+# Make your repo public temporarily at:
+# https://github.com/V4nish/holibob-core/settings
+
+# Create app directory with proper permissions
+sudo mkdir -p /var/www
+sudo chown -R $USER:$USER /var/www
+cd /var/www
+
+# Clone without authentication
 git clone https://github.com/V4nish/holibob-core.git holibob
 cd holibob
+
+# Make private again after deployment
 ```
 
 ### 2.2 Configure Environment
@@ -446,7 +504,7 @@ docker-compose -f docker-compose.prod.yml exec php php artisan affiliate:sync sy
 ```bash
 cd /var/www/holibob
 
-# Pull latest code
+# Pull latest code (will use SSH key or token if configured)
 git pull origin main
 
 # Rebuild frontend
@@ -456,6 +514,11 @@ npm run build
 # Use deployment script
 ./deploy.sh
 ```
+
+**Note**: If you cloned with a Personal Access Token, you'll need to either:
+- Set up SSH key (recommended for future updates)
+- Use `git pull` with token: `git pull https://YOUR_TOKEN@github.com/V4nish/holibob-core.git main`
+- Make repo public for easier updates
 
 ---
 
