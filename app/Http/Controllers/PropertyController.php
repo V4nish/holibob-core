@@ -54,7 +54,8 @@ class PropertyController extends Controller
         ]);
 
         return Inertia::render('Properties/Index', [
-            'initialFilters' => $filters,
+            // Cast to object to ensure JSON encodes as {} not [] when empty
+            'initialFilters' => (object) $filters,
         ]);
     }
 }
