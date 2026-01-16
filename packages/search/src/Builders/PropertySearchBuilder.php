@@ -234,19 +234,8 @@ class PropertySearchBuilder
         try {
             $builder = $this->buildScoutQuery();
 
-            // Apply filters
-            if (! empty($this->filters)) {
-                $filterString = implode(' AND ', $this->filters);
-                $builder->where($filterString);
-            }
-
-            // Apply sorting
-            if (! empty($this->sort)) {
-                foreach ($this->sort as $sort) {
-                    [$field, $direction] = explode(':', $sort);
-                    $builder->orderBy($field, $direction);
-                }
-            }
+            // Apply Meilisearch filters and sorting via options callback
+            $builder->options($this->buildMeilisearchOptions());
 
             // Execute search with pagination
             $results = $builder->paginate($this->perPage, 'page', $this->page);
@@ -288,19 +277,8 @@ class PropertySearchBuilder
         try {
             $builder = $this->buildScoutQuery();
 
-            // Apply filters
-            if (! empty($this->filters)) {
-                $filterString = implode(' AND ', $this->filters);
-                $builder->where($filterString);
-            }
-
-            // Apply sorting
-            if (! empty($this->sort)) {
-                foreach ($this->sort as $sort) {
-                    [$field, $direction] = explode(':', $sort);
-                    $builder->orderBy($field, $direction);
-                }
-            }
+            // Apply Meilisearch filters and sorting via options callback
+            $builder->options($this->buildMeilisearchOptions());
 
             return $builder->get();
 
@@ -322,10 +300,8 @@ class PropertySearchBuilder
         try {
             $builder = $this->buildScoutQuery();
 
-            if (! empty($this->filters)) {
-                $filterString = implode(' AND ', $this->filters);
-                $builder->where($filterString);
-            }
+            // Apply Meilisearch filters via options callback
+            $builder->options($this->buildMeilisearchOptions());
 
             return $builder->count();
 
@@ -337,6 +313,26 @@ class PropertySearchBuilder
 
             return 0;
         }
+    }
+
+    /**
+     * Build Meilisearch options array for filters and sorting.
+     */
+    protected function buildMeilisearchOptions(): array
+    {
+        $options = [];
+
+        // Apply filters
+        if (! empty($this->filters)) {
+            $options['filter'] = implode(' AND ', $this->filters);
+        }
+
+        // Apply sorting
+        if (! empty($this->sort)) {
+            $options['sort'] = $this->sort;
+        }
+
+        return $options;
     }
 
     /**
