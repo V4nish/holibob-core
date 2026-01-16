@@ -29,7 +29,7 @@ class SearchController extends Controller
             'bathrooms' => 'nullable|integer|min:0|max:10',
             'price_min' => 'nullable|numeric|min:0',
             'price_max' => 'nullable|numeric|min:0',
-            'sort' => 'nullable|string|in:relevance,price_asc,price_desc,sleeps_desc,featured',
+            'sort' => 'nullable|string|in:,relevance,price_asc,price_desc,sleeps_desc,featured',
             'per_page' => 'nullable|integer|min:1|max:100',
             'page' => 'nullable|integer|min:1',
             'facets' => 'nullable|boolean',
